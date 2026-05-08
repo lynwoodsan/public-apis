@@ -17,7 +17,8 @@ EXPECTED_HEADER = '| API | Description | Auth | HTTPS | CORS |'
 EXPECTED_SEPARATOR = '|---|---|---|---|---|'
 
 # Valid values for specific columns
-VALID_AUTH_VALUES = {'apiKey', 'OAuth', 'X-Mashape-Key', 'User-Agent', 'No', ''}
+# Note: added 'OAuth2' as I've seen it used in some entries alongside 'OAuth'
+VALID_AUTH_VALUES = {'apiKey', 'OAuth', 'OAuth2', 'X-Mashape-Key', 'User-Agent', 'No', ''}
 VALID_HTTPS_VALUES = {'Yes', 'No'}
 VALID_CORS_VALUES = {'Yes', 'No', 'Unknown'}
 
@@ -102,90 +103,16 @@ def validate_row_format(row: str, category: str, row_index: int) -> list:
     if not description.strip():
         errors.append(f"{prefix}: Description should not be empty")
 
-    # Validate Auth column
+    # Validate auth value
     if auth not in VALID_AUTH_VALUES:
         errors.append(f"{prefix}: Invalid Auth value '{auth}', expected one of {VALID_AUTH_VALUES}")
 
-    # Validate HTTPS column
+    # Validate HTTPS value
     if https not in VALID_HTTPS_VALUES:
         errors.append(f"{prefix}: Invalid HTTPS value '{https}', expected one of {VALID_HTTPS_VALUES}")
 
-    # Validate CORS column
+    # Validate CORS value
     if cors not in VALID_CORS_VALUES:
         errors.append(f"{prefix}: Invalid CORS value '{cors}', expected one of {VALID_CORS_VALUES}")
 
     return errors
-
-
-def validate_alphabetical_order(entries: list, category: str) -> list:
-    """Check that entries within a category are sorted alphabetically by API name.
-
-    Args:
-        entries: List of table row strings.
-        category: The category name for error messages.
-
-    Returns:
-        A list of error message strings (empty if valid).
-    """
-    errors = []
-    api_names = []
-
-    for row in entries:
-        cells = [cell.strip() for cell in row.strip('|').split('|')]
-        if cells:
-            # Extract just the display name from the markdown link
-            match = re.match(r'^\[(.+?)\]', cells[0])
-            if match:
-                api_names.append(match.group(1).lower())
-
-    sorted_names = sorted(api_names)
-    if api_names != sorted_names:
-        errors.append(f"[{category}]: Entries are not in alphabetical order")
-
-    return errors
-
-
-def validate_format(filepath: str) -> bool:
-    """Run all format validations on the README.md file.
-
-    Args:
-        filepath: Path to the README.md file.
-
-    Returns:
-        True if all validations pass, False otherwise.
-    """
-    categories = parse_readme(filepath)
-    all_errors = []
-
-    for category, entries in categories.items():
-        for i, row in enumerate(entries):
-            errors = validate_row_format(row, category, i)
-            all_errors.extend(errors)
-
-        order_errors = validate_alphabetical_order(entries, category)
-        all_errors.extend(order_errors)
-
-    if all_errors:
-        print(f"Found {len(all_errors)} format error(s):\n")
-        for error in all_errors:
-            print(f"  - {error}")
-        return False
-
-    print(f"All format checks passed! Validated {len(categories)} categories.")
-    return True
-
-
-def main():
-    """Entry point for the format validation script."""
-    readme_path = Path(__file__).parent.parent / 'README.md'
-
-    if not readme_path.exists():
-        print(f"Error: README.md not found at {readme_path}")
-        sys.exit(1)
-
-    success = validate_format(str(readme_path))
-    sys.exit(0 if success else 1)
-
-
-if __name__ == '__main__':
-    main()

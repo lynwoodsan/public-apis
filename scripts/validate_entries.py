@@ -27,6 +27,9 @@ ROW_PATTERN = re.compile(
     r'\|\s*(Yes|No|Unknown)\s*\|$'
 )
 
+# Maximum allowed length for a description — helps keep entries concise
+MAX_DESCRIPTION_LENGTH = 100
+
 
 def parse_table_row(row: str) -> list[str] | None:
     """Parse a markdown table row into its columns.
@@ -75,6 +78,10 @@ def validate_entry(row: str, line_num: int) -> list[str]:
     if description.endswith('.'):
         errors.append(f'Line {line_num}: Description must not end with a period: "{description}"')
 
+    # Validate description length — long descriptions clutter the table
+    if len(description) > MAX_DESCRIPTION_LENGTH:
+        errors.append(f'Line {line_num}: Description too long ({len(description)} chars, max {MAX_DESCRIPTION_LENGTH}): "{description}"')
+
     # Validate auth value
     if auth not in VALID_AUTH and not re.match(r'^`[^`]+`$', auth):
         errors.append(f'Line {line_num}: Invalid Auth value "{auth}". Must be one of {VALID_AUTH}')
@@ -91,62 +98,4 @@ def validate_entry(row: str, line_num: int) -> list[str]:
 
 
 def validate_entries(readme_path: str = 'README.md') -> bool:
-    """Validate all API entries in the README file.
-
-    Args:
-        readme_path: Path to the README.md file.
-
-    Returns:
-        True if all entries are valid, False otherwise.
-    """
-    path = Path(readme_path)
-    if not path.exists():
-        print(f'Error: File not found: {readme_path}', file=sys.stderr)
-        return False
-
-    content = path.read_text(encoding='utf-8')
-    lines = content.splitlines()
-
-    all_errors = []
-    in_table = False
-    entry_count = 0
-
-    for line_num, line in enumerate(lines, start=1):
-        stripped = line.strip()
-
-        # Detect start of a table
-        if stripped == TABLE_HEADER:
-            in_table = True
-            continue
-
-        # Skip separator line
-        if in_table and stripped == TABLE_SEPARATOR:
-            continue
-
-        # Process table rows
-        if in_table and stripped.startswith('|') and stripped.endswith('|'):
-            errors = validate_entry(stripped, line_num)
-            all_errors.extend(errors)
-            entry_count += 1
-        elif in_table and stripped == '':
-            in_table = False  # blank line ends the table
-
-    if all_errors:
-        print(f'Found {len(all_errors)} validation error(s):\n')
-        for error in all_errors:
-            print(f'  {error}')
-        return False
-
-    print(f'All {entry_count} entries are valid.')
-    return True
-
-
-def main() -> None:
-    """Entry point for the validate_entries script."""
-    readme = sys.argv[1] if len(sys.argv) > 1 else 'README.md'
-    success = validate_entries(readme)
-    sys.exit(0 if success else 1)
-
-
-if __name__ == '__main__':
-    main()
+    """Validate all API entrie

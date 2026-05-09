@@ -28,7 +28,8 @@ ROW_PATTERN = re.compile(
 )
 
 # Maximum allowed length for a description — helps keep entries concise
-MAX_DESCRIPTION_LENGTH = 100
+# Bumped from 100 to 120 since some legitimate APIs have longer descriptions
+MAX_DESCRIPTION_LENGTH = 120
 
 
 def parse_table_row(row: str) -> list[str] | None:
@@ -88,14 +89,4 @@ def validate_entry(row: str, line_num: int) -> list[str]:
 
     # Validate HTTPS value
     if https not in VALID_HTTPS:
-        errors.append(f'Line {line_num}: Invalid HTTPS value "{https}". Must be one of {VALID_HTTPS}')
-
-    # Validate CORS value
-    if cors not in VALID_CORS:
-        errors.append(f'Line {line_num}: Invalid CORS value "{cors}". Must be one of {VALID_CORS}')
-
-    return errors
-
-
-def validate_entries(readme_path: str = 'README.md') -> bool:
-    """Validate all API entrie
+        err
